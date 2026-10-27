@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 import random
 import string
+import re
 
 # Налаштовуємо логування (виправлено подвійний виклик basicConfig)
 logging.basicConfig(
@@ -53,6 +54,35 @@ class PasswordGenerator(ABC):
                 "Згенерований пароль не пройшов валідацію! Спробуйте ще раз."
             )
             return self.create_password()  # Рекурсивний перезапуск у разі невдачі
+
+
+class ComplexPasswordCreator(PasswordGenerator):
+    """Клас для створення НАДІЙНИХ паролів із використанням регулярних виразів."""
+
+    def __init__(self, length: int = 8):
+        super().__init__(length)
+        # Об'єднуємо всі можливі символи для генерації
+        self.allowed_characters = (
+            string.ascii_letters + string.digits + string.punctuation
+        )
+
+    def generate_chars(self):
+        """Генератор, який видає випадкові символи (літери, цифри, знаки)."""
+        while True:
+            yield random.choice(self.allowed_characters)
+
+    def check_password(self, password: str) -> bool:
+        """Перевірка пароля за допомогою регулярного виразу (re)."""
+        # Пояснення шаблону regex:
+        # (?=.*[a-z]) - має бути хоча б одна мала літера
+        # (?=.*[A-Z]) - має быть хоча б одна велика літера
+        # (?=.*\d)     - має бути хоча б одна цифра
+        # (?=.*[\W_])  - має бути хоча б один спецсимвол (знак пунктуації)
+        pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$"
+        # re.match повертає об'єкт збігу, якщо пароль відповідає ВСІМ умовам
+        if re.match(pattern, password):
+            return True
+        return False
 
 
 class PasswordCreatorNumber(PasswordGenerator):
